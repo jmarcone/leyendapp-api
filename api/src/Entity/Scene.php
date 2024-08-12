@@ -47,9 +47,9 @@ class Scene
     private Collection $npcs;
 
     /**
-     * @var Collection<int, Player>
+     * @var Collection<int, Character>
      */
-    #[ORM\ManyToMany(targetEntity: Player::class, inversedBy: 'scenes')]
+    #[ORM\ManyToMany(targetEntity: Character::class, inversedBy: 'scenes')]
     private Collection $players;
 
     public function __construct()
@@ -182,14 +182,14 @@ class Scene
     }
 
     /**
-     * @return Collection<int, Player>
+     * @return Collection<int, Character>
      */
     public function getPlayers(): Collection
     {
         return $this->players;
     }
 
-    public function addPlayer(Player $player): static
+    public function addPlayer(Character $player): static
     {
         if (!$this->players->contains($player)) {
             $this->players->add($player);
@@ -198,7 +198,7 @@ class Scene
         return $this;
     }
 
-    public function removePlayer(Player $player): static
+    public function removePlayer(Character $player): static
     {
         $this->players->removeElement($player);
 

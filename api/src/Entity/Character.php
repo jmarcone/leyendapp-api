@@ -3,54 +3,53 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Repository\CharacterRepository;
+use App\Repository\PlayerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ORM\Entity(repositoryClass: CharacterRepository::class)]
-#[ApiResource]
+#[ORM\Entity(repositoryClass: PlayerRepository::class)]
+#[ApiResource(
+    normalizationContext: [
+        'groups' => ['player:read'],
+    ],
+    denormalizationContext: [
+        'groups' => ['treasure:write'],
+    ]
+)]
 class Character
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['player:read'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'characters')]
+    #[ORM\ManyToOne(inversedBy: 'players')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Player $player = null;
+    #[Groups(['player:read', 'treasure:write'])]
+    private ?Usuario $usuario = null;
 
-    #[ORM\Column(type: Types::TEXT)]
-    private ?string $origen = null;
-
-    #[ORM\Column(type: Types::TEXT)]
-    private ?string $rasgoLegendario = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $name = null;
 
     /**
-     * @var Collection<int, Motivacion>
+     * @var Collection<int, Scene>
      */
-    #[ORM\OneToMany(mappedBy: 'character', targetEntity: Motivacion::class)]
-    private Collection $motivacions;
+    #[ORM\ManyToMany(targetEntity: Scene::class, mappedBy: 'players')]
+    #[Groups(['player:read'])]
+    private Collection $scenes;
 
     /**
-     * @var Collection<int, Motivacion>
+     * @var Collection<int, Character>
      */
-    #[ORM\OneToMany(mappedBy: 'vinculacion', targetEntity: Motivacion::class)]
-    private Collection $vinculaciones;
-
-    #[ORM\ManyToOne(inversedBy: 'characters')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Trasfondo $trasfondo = null;
+    #[ORM\OneToMany(mappedBy: 'player', targetEntity: Character::class)]
+    #[Groups(['player:read'])]
+    private Collection $characters;
 
     public function __construct()
     {
-        $this->motivacions = new ArrayCollection();
-        $this->vinculaciones = new ArrayCollection();
+        $this->scenes = new ArrayCollection();
+        $this->characters = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -58,122 +57,71 @@ class Character
         return $this->id;
     }
 
-    public function getPlayer(): ?Player
+    public function getUsuario(): ?Usuario
     {
-        return $this->player;
+        return $this->usuario;
     }
 
-    public function setPlayer(?Player $player): static
+    public function setUsuario(?Usuario $usuario): static
     {
-        $this->player = $player;
-
-        return $this;
-    }
-
-    public function getOrigen(): ?string
-    {
-        return $this->origen;
-    }
-
-    public function setOrigen(string $origen): static
-    {
-        $this->origen = $origen;
-
-        return $this;
-    }
-
-    public function getRasgoLegendario(): ?string
-    {
-        return $this->rasgoLegendario;
-    }
-
-    public function setRasgoLegendario(string $rasgoLegendario): static
-    {
-        $this->rasgoLegendario = $rasgoLegendario;
-
-        return $this;
-    }
-
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): static
-    {
-        $this->name = $name;
+        $this->usuario = $usuario;
 
         return $this;
     }
 
     /**
-     * @return Collection<int, Motivacion>
+     * @return Collection<int, Scene>
      */
-    public function getMotivacions(): Collection
+    public function getScenes(): Collection
     {
-        return $this->motivacions;
+        return $this->scenes;
     }
 
-    public function addMotivacion(Motivacion $motivacion): static
+    public function addScene(Scene $scene): static
     {
-        if (!$this->motivacions->contains($motivacion)) {
-            $this->motivacions->add($motivacion);
-            $motivacion->setCharacter($this);
+        if (!$this->scenes->contains($scene)) {
+            $this->scenes->add($scene);
+            $scene->addPlayer($this);
         }
 
         return $this;
     }
 
-    public function removeMotivacion(Motivacion $motivacion): static
+    public function removeScene(Scene $scene): static
     {
-        if ($this->motivacions->removeElement($motivacion)) {
-            // set the owning side to null (unless already changed)
-            if ($motivacion->getCharacter() === $this) {
-                $motivacion->setCharacter(null);
-            }
+        if ($this->scenes->removeElement($scene)) {
+            $scene->removePlayer($this);
         }
 
         return $this;
     }
 
     /**
-     * @return Collection<int, Motivacion>
+     * @return Collection<int, Character>
      */
-    public function getVinculaciones(): Collection
+    public function getCharacters(): Collection
     {
-        return $this->vinculaciones;
+        return $this->characters;
     }
 
-    public function addVinculacione(Motivacion $vinculacione): static
+    public function addCharacter(Character $character): static
     {
-        if (!$this->vinculaciones->contains($vinculacione)) {
-            $this->vinculaciones->add($vinculacione);
-            $vinculacione->setVinculacion($this);
+        if (!$this->characters->contains($character)) {
+            $this->characters->add($character);
+            $character->setPlayer($this);
         }
 
         return $this;
     }
 
-    public function removeVinculacione(Motivacion $vinculacione): static
+    public function removeCharacter(Character $character): static
     {
-        if ($this->vinculaciones->removeElement($vinculacione)) {
+        if ($this->characters->removeElement($character)) {
             // set the owning side to null (unless already changed)
-            if ($vinculacione->getVinculacion() === $this) {
-                $vinculacione->setVinculacion(null);
+            if ($character->getPlayer() === $this) {
+                $character->setPlayer(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getTrasfondo(): ?Trasfondo
-    {
-        return $this->trasfondo;
-    }
-
-    public function setTrasfondo(?Trasfondo $trasfondo): static
-    {
-        $this->trasfondo = $trasfondo;
 
         return $this;
     }

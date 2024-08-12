@@ -16,6 +16,14 @@ use function Symfony\Component\String\u;
 #[ApiResource(types: ['https://schema.org/Person'], mercure: true)]
 #[ORM\Entity]
 #[ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'email' => 'partial'])]
+#[ApiResource(
+    normalizationContext: [
+        'groups' => ['usuario:read'],
+    ],
+    denormalizationContext: [
+        'groups' => ['usuario:write'],
+    ]
+)]
 class Usuario
 {
     /**
@@ -24,7 +32,7 @@ class Usuario
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     #[ORM\GeneratedValue(strategy: 'SEQUENCE')]
-    #[Groups(['treasure:read'])]
+    #[Groups(['usuario:read'])]
     private ?int $id = null;
 
     /**
@@ -34,9 +42,10 @@ class Usuario
     #[Assert\NotBlank]
     #[ApiProperty(iris: ["https://schema.org/name"])]
     #[ApiFilter(SearchFilter::class, strategy: 'partial')]
+    #[Groups(['usuario:read', 'usuario:write'])]
     public string $name = '';
 
-    #[Groups(['treasure:read'])]
+    #[Groups(['usuario:read'])]
     public function getInitials(): string
     {
         return u($this->name)->truncate(2);
@@ -46,18 +55,20 @@ class Usuario
     #[ORM\Column]
     #[Assert\Email]
     #[ApiProperty(iris: ["https://schema.org/email"])]
+    #[Groups(['usuario:read', 'usuario:write'])]
     public string $email = "a@a";
 
     /**
      * @var Collection<int, Choir>
      */
     #[ORM\OneToMany(mappedBy: 'usuario', targetEntity: Choir::class)]
+    #[ApiProperty(iris: ["https://schema.org/choir"])]
     private Collection $choirs;
 
     /**
-     * @var Collection<int, Player>
+     * @var Collection<int, Character>
      */
-    #[ORM\OneToMany(mappedBy: 'usuario', targetEntity: Player::class)]
+    #[ORM\OneToMany(mappedBy: 'usuario', targetEntity: Character::class)]
     private Collection $players;
 
     /**
@@ -109,14 +120,14 @@ class Usuario
     }
 
     /**
-     * @return Collection<int, Player>
+     * @return Collection<int, Character>
      */
     public function getPlayers(): Collection
     {
         return $this->players;
     }
 
-    public function addPlayer(Player $player): static
+    public function addPlayer(Character $player): static
     {
         if (!$this->players->contains($player)) {
             $this->players->add($player);
@@ -126,7 +137,7 @@ class Usuario
         return $this;
     }
 
-    public function removePlayer(Player $player): static
+    public function removePlayer(Character $player): static
     {
         if ($this->players->removeElement($player)) {
             // set the owning side to null (unless already changed)

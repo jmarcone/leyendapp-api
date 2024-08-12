@@ -36,11 +36,6 @@ class Game
     #[ORM\OneToMany(mappedBy: 'game', targetEntity: Choir::class)]
     private Collection $choirs;
 
-    /**
-     * @var Collection<int, Player>
-     */
-    #[ORM\OneToMany(mappedBy: 'game', targetEntity: Player::class)]
-    private Collection $players;
 
     /**
      * @var Collection<int, Npc>
@@ -56,12 +51,18 @@ class Game
     #[ORM\JoinColumn(nullable: true)]
     private ?Usuario $director = null;
 
+    /**
+     * @var Collection<int, Character>
+     */
+    #[ORM\OneToMany(mappedBy: 'game', targetEntity: Character::class)]
+    private Collection $characters;
+
     public function __construct()
     {
         $this->acts = new ArrayCollection();
         $this->choirs = new ArrayCollection();
-        $this->players = new ArrayCollection();
         $this->npcs = new ArrayCollection();
+        $this->characters = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -141,35 +142,7 @@ class Game
         return $this;
     }
 
-    /**
-     * @return Collection<int, Player>
-     */
-    public function getPlayers(): Collection
-    {
-        return $this->players;
-    }
 
-    public function addPlayer(Player $player): static
-    {
-        if (!$this->players->contains($player)) {
-            $this->players->add($player);
-            $player->setGame($this);
-        }
-
-        return $this;
-    }
-
-    public function removePlayer(Player $player): static
-    {
-        if ($this->players->removeElement($player)) {
-            // set the owning side to null (unless already changed)
-            if ($player->getGame() === $this) {
-                $player->setGame(null);
-            }
-        }
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Npc>
@@ -221,6 +194,36 @@ class Game
     public function setDirector(?Usuario $director): static
     {
         $this->director = $director;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Character>
+     */
+    public function getCharacters(): Collection
+    {
+        return $this->characters;
+    }
+
+    public function addCharacter(Character $character): static
+    {
+        if (!$this->characters->contains($character)) {
+            $this->characters->add($character);
+            $character->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCharacter(Character $character): static
+    {
+        if ($this->characters->removeElement($character)) {
+            // set the owning side to null (unless already changed)
+            if ($character->getGame() === $this) {
+                $character->setGame(null);
+            }
+        }
 
         return $this;
     }
